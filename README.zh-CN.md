@@ -63,9 +63,57 @@
 * **输出**：PNG（RGB 或透明 RGBA）、SVG，或者原始布局数据（词、字号、位置、颜色），方便你自己绘制。
 * **与种子严格一致**：复现了 CPython 的梅森旋转随机数、Python 字典顺序、Pillow 的 `BLEND`
   以及所有历史布局怪癖，因此在字形位图相同的情况下，布局和 PNG 像素与 Python 版逐字节一致。
-* **快**：端到端比 Python/Cython 原版快约 10 倍。
+* **快且省内存**：端到端比 Python/Cython 原版快 7–19 倍，内存只占一小部分（见[性能测试](#性能测试)）。
 * **安全**：`#![deny(unsafe_code)]`。唯一的例外是一处经过审查的代码块（占用窗口计数中省略边界检查，
   并由 `assert!` 保护），保留它只是因为基准测试显示比安全写法快 12–15%。
+
+## 性能测试
+
+两边使用相同的输入和参数；每个数字都是多个随机种子的中位数，每次运行都是独立进程。
+
+| 场景 | Python | Rust | 提速 | 峰值内存 Python → Rust |
+|---|---:|---:|---:|---:|
+| 默认，400×200 | 628 ms | **33 ms** | **19 倍** | 66 MB → **8 MB** |
+| 大图，1000×700，400 个词 | 2.61 s | **0.22 s** | **12 倍** | 83 MB → **11 MB** |
+| 遮罩，900×900，400 个词 | 2.89 s | **0.27 s** | **11 倍** | 86 MB → **18 MB** |
+
+**极限测试**
+
+| 场景 | Python | Rust | 提速 | 峰值内存 Python → Rust |
+|---|---:|---:|---:|---:|
+| 50 MB 文本 | 9.0 s | **1.0 s** | **9 倍** | 756 MB → **86 MB** |
+| 4K 画布，3840×2160，1000 个词 | 87.9 s | **12.4 s** | **7 倍** | 305 MB → **59 MB** |
+| 极高密度：1000×700，3000 个词，最小字号 2，边距 1，`--repeat` | 35.2 s | **2.7 s** | **13 倍** | 86 MB → **12 MB** |
+
+以上是命令行端到端耗时（`python -m wordcloud` 对比 `wordcloud`），包含 Python 0.4–0.6 秒的解释器启动和导入时间。
+如果只在已启动的解释器里计时 `WordCloud(...).generate(text).to_image()`，前三个场景 Python 分别需要
+214 ms、2.06 s 和 2.25 s，即作为库使用时 Rust 仍然**快 6–9 倍**。
+
+<details>
+<summary>测试环境与方法</summary>
+
+- CPU：Intel Xeon @ 2.80 GHz（Cascade Lake：family 6，model 85，stepping 7），4 核，KVM 虚拟机
+- 内存：15.7 GiB
+- 系统：Ubuntu 24.04.5 LTS，Linux 6.18
+- Rust：rustc 1.97.0，`cargo build --release`（fat LTO，未启用 PGO）
+- Python：3.13.18，wordcloud 1.9.6，NumPy 2.5.4，Pillow 13.0.0
+- 两者都是单线程运行，核心数不影响结果。
+- 输入：`tests/golden/alice.txt`（上游项目的示例文本）。50 MB 的输入由 `alice.txt`、`a_new_hope.txt`
+  和 `constitution.txt` 重复拼接而成。
+- 常规场景每个跑 10 个种子，极限测试每个跑 3 个。耗时和峰值内存（RSS）通过 `wait4` 按进程测量
+  （见 `tools/peak_rss.rs`）。
+- 两者用不同的库光栅化字形（FreeType 与 `ab_glyph`），同一种子下的布局略有不同，
+  所以两边的工作量接近但不完全相同。
+
+复现方法：
+
+```bash
+cargo build --release
+python3 -m venv /tmp/wc-venv && /tmp/wc-venv/bin/pip install wordcloud==1.9.6
+python3 tools/benchmark.py --python /tmp/wc-venv/bin/python --runs 10 --stress-runs 3
+```
+
+</details>
 
 ## 安装
 
@@ -247,7 +295,7 @@ cargo run --release --example shape_mask
 |---|---|
 | `src/` | 库和 `wordcloud` 可执行文件 |
 | `tests/` | 黄金数据一致性测试、属性测试、命令行测试和引擎测试（`tests/golden/` 存放由 Python 包生成的数据） |
-| `tools/` | `record_pillow.py` + `parity.py`（A/B 对比工具）、`make_golden.py`、`gen_tables.py`、`bench.py` |
+| `tools/` | `benchmark.py` + `peak_rss.rs`（README 中的性能测试）、`record_pillow.py` + `parity.py`（A/B 对比工具）、`make_golden.py`、`gen_tables.py`、`bench.py` |
 | `docs/` | 迁移方案、遥测数据、交互式报告（`migration_infographic.html`）以及 README 示例图（`gallery/`） |
 | `examples/` | 生成示例图的代码，输入文本在 `examples/data/` |
 
