@@ -68,10 +68,63 @@ package (v1.9.6), with the same options and defaults.
 * **Seed-exact**: CPython's Mersenne Twister, Python dict ordering, Pillow's
   `BLEND` and every legacy layout quirk are reproduced, so with the same glyph
   masks the layout and the PNG pixels match the Python package byte for byte.
-* **Fast**: ~10× faster end to end than the Python/Cython original.
+* **Fast and light**: 7–19× faster end to end than the Python/Cython original, with a
+  fraction of the memory (see [Benchmark](#benchmark)).
 * **Safe**: `#![deny(unsafe_code)]`. The one exception is a single audited block
   (bounds-check elision in the occupancy window counter, guarded by an `assert!`),
   kept only because benchmarks show it is 12–15% faster than the safe forms.
+
+## Benchmark
+
+Same inputs and options for both tools; every number is the median over several
+random seeds, each run as its own process.
+
+| Workload | Python | Rust | Speed-up | Peak memory, Python → Rust |
+|---|---:|---:|---:|---:|
+| Default, 400×200 | 628 ms | **33 ms** | **19×** | 66 MB → **8 MB** |
+| Large, 1000×700, 400 words | 2.61 s | **0.22 s** | **12×** | 83 MB → **11 MB** |
+| Mask, 900×900, 400 words | 2.89 s | **0.27 s** | **11×** | 86 MB → **18 MB** |
+
+**Stress tests**
+
+| Workload | Python | Rust | Speed-up | Peak memory, Python → Rust |
+|---|---:|---:|---:|---:|
+| 50 MB of text | 9.0 s | **1.0 s** | **9×** | 756 MB → **86 MB** |
+| 4K canvas, 3840×2160, 1000 words | 87.9 s | **12.4 s** | **7×** | 305 MB → **59 MB** |
+| Very dense: 1000×700, 3000 words, min font 2, margin 1, `--repeat` | 35.2 s | **2.7 s** | **13×** | 86 MB → **12 MB** |
+
+Timings are end to end on the command line (`python -m wordcloud` vs
+`wordcloud`), so Python's 0.4–0.6 s of interpreter start-up and imports is included. Timing only
+`WordCloud(...).generate(text).to_image()` inside a running interpreter, Python
+takes 214 ms, 2.06 s and 2.25 s for the first three rows, so Rust is still
+**6–9× faster** as a library.
+
+<details>
+<summary>Test machine and method</summary>
+
+- CPU: Intel Xeon @ 2.80 GHz (Cascade Lake: family 6, model 85, stepping 7), 4 cores, KVM virtual machine
+- Memory: 15.7 GiB
+- OS: Ubuntu 24.04.5 LTS, Linux 6.18
+- Rust: rustc 1.97.0, `cargo build --release` (fat LTO, no PGO)
+- Python: 3.13.18, wordcloud 1.9.6, NumPy 2.5.4, Pillow 13.0.0
+- Both tools are single-threaded, so the core count does not matter.
+- Input: `tests/golden/alice.txt` (the upstream example). The 50 MB input is
+  `alice.txt`, `a_new_hope.txt` and `constitution.txt` repeated.
+- 10 seeds per workload, 3 for the stress tests. Time and peak RSS are taken
+  per process with `wait4` (`tools/peak_rss.rs`).
+- The two tools rasterise glyphs with different libraries (FreeType vs
+  `ab_glyph`), so their layouts for a seed differ slightly and the work done is
+  close but not identical.
+
+Reproduce with:
+
+```bash
+cargo build --release
+python3 -m venv /tmp/wc-venv && /tmp/wc-venv/bin/pip install wordcloud==1.9.6
+python3 tools/benchmark.py --python /tmp/wc-venv/bin/python --runs 10 --stress-runs 3
+```
+
+</details>
 
 ## Install
 
@@ -257,7 +310,7 @@ engine. `tools/parity.py` then compares layouts and pixels.
 |---|---|
 | `src/` | Library and `wordcloud` binary |
 | `tests/` | Golden-data parity, property, CLI and engine tests (`tests/golden/` holds data generated from the Python package) |
-| `tools/` | `record_pillow.py` + `parity.py` (A/B harness), `make_golden.py`, `gen_tables.py`, `bench.py` |
+| `tools/` | `benchmark.py` + `peak_rss.rs` (README benchmark), `record_pillow.py` + `parity.py` (A/B harness), `make_golden.py`, `gen_tables.py`, `bench.py` |
 | `docs/` | Migration blueprint, telemetry, the interactive report (`migration_infographic.html`) and the README gallery images (`gallery/`) |
 | `examples/` | The examples that generate the gallery, with their input texts in `examples/data/` |
 

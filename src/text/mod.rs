@@ -13,6 +13,7 @@ mod counts;
 pub use counts::{Counts, ProcessedTokens, process_tokens, score, unigrams_and_bigrams};
 
 use crate::error::Result;
+use counts::{FxIndexMap, FxIndexSet};
 use regex::Regex;
 use std::collections::HashSet;
 use std::sync::LazyLock;
@@ -93,47 +94,58 @@ pub fn process_text(text: &str, opts: &TextOptions) -> Result<Counts> {
         None if opts.min_word_length <= 1 => &WORD_STAR,
         None => &WORD_PLUS,
     };
-    let mut words: Vec<String> = re
+    // Intern tokens: each distinct token is filtered, lower-cased and looked up
+    // in the stopword list once, instead of once per occurrence.
+    let mut vocab: FxIndexSet<&str> = FxIndexSet::default();
+    let mut seq: Vec<u32> = re
         .find_iter(text)
-        .map(|m| {
-            let w = m.as_str();
-            let tail: String = w
-                .chars()
-                .rev()
-                .take(2)
-                .collect::<Vec<_>>()
-                .into_iter()
-                .rev()
-                .collect();
-            if tail.to_lowercase() == "'s" {
-                counts_drop(w)
-            } else {
-                w.to_string()
-            }
+        .map(|m| vocab.insert_full(strip_possessive(m.as_str())).0 as u32)
+        .collect();
+    let keep: Vec<bool> = vocab
+        .iter()
+        .map(|w| {
+            (opts.include_numbers || !is_py_digit(w))
+                && (opts.min_word_length == 0 || w.chars().count() >= opts.min_word_length)
         })
         .collect();
-    if !opts.include_numbers {
-        words.retain(|w| !is_py_digit(w));
-    }
-    if opts.min_word_length > 0 {
-        words.retain(|w| w.chars().count() >= opts.min_word_length);
-    }
+    seq.retain(|&id| keep[id as usize]);
     let stopwords: HashSet<String> = opts.stopwords.iter().map(|s| s.to_lowercase()).collect();
+    let stop: Vec<bool> = vocab
+        .iter()
+        .map(|w| stopwords.contains(&w.to_lowercase()))
+        .collect();
+    let vocab: Vec<&str> = vocab.into_iter().collect();
     if opts.collocations {
-        Ok(unigrams_and_bigrams(
-            &words,
-            &stopwords,
+        Ok(counts::unigrams_and_bigrams_ids(
+            &vocab,
+            &seq,
+            &stop,
             opts.normalize_plurals,
             opts.collocation_threshold,
         ))
     } else {
-        words.retain(|w| !stopwords.contains(&w.to_lowercase()));
-        Ok(process_tokens(&words, opts.normalize_plurals).counts)
+        let mut distinct: FxIndexMap<u32, i64> = FxIndexMap::default();
+        for &id in seq.iter().filter(|&&id| !stop[id as usize]) {
+            *distinct.entry(id).or_insert(0) += 1;
+        }
+        Ok(counts::process_weighted(
+            distinct.into_iter().map(|(id, c)| (vocab[id as usize], c)),
+            opts.normalize_plurals,
+        )
+        .counts)
     }
 }
 
-fn counts_drop(w: &str) -> String {
-    counts::drop_last_chars(w, 2).to_string()
+/// Strips a trailing `'s` (legacy: `if word[-2:].lower() == "'s": word = word[:-2]`).
+///
+/// Only `'` lower-cases to `'` and only `s`/`S` lower-case to `s`, so comparing
+/// the last two characters directly is exact and allocation-free.
+fn strip_possessive(w: &str) -> &str {
+    let mut tail = w.chars().rev();
+    match (tail.next(), tail.next()) {
+        (Some('s' | 'S'), Some('\'')) => counts::drop_last_chars(w, 2),
+        _ => w,
+    }
 }
 
 #[cfg(test)]
