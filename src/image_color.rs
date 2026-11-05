@@ -25,7 +25,7 @@ impl ImageColorGenerator {
     /// [`WordCloudError::InvalidConfig`] if `rgb.len() != width * height * 3`.
     ///
     /// ```
-    /// use wordcloud_rs::image_color::ImageColorGenerator;
+    /// use wordcloud::image_color::ImageColorGenerator;
     /// assert!(ImageColorGenerator::new(2, 2, vec![0; 12], None).is_ok());
     /// assert!(ImageColorGenerator::new(2, 2, vec![0; 5], None).is_err());
     /// ```

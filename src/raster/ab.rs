@@ -42,12 +42,12 @@ impl AbGlyphRasterizer {
     /// [`WordCloudError::InvalidFont`] if the bytes are not a font.
     ///
     /// ```
-    /// use wordcloud_rs::raster::{AbGlyphRasterizer, Orientation, TextRasterizer};
-    /// let r = AbGlyphRasterizer::from_bytes(wordcloud_rs::raster::DEFAULT_FONT.to_vec(), true)?;
+    /// use wordcloud::raster::{AbGlyphRasterizer, Orientation, TextRasterizer};
+    /// let r = AbGlyphRasterizer::from_bytes(wordcloud::raster::DEFAULT_FONT.to_vec(), true)?;
     /// let (w, h) = r.bbox("Alice", 40, Orientation::Horizontal)?;
     /// assert!(w > h && h > 20);
     /// assert_eq!(r.bbox("Alice", 40, Orientation::Vertical)?, (h, w));
-    /// # Ok::<(), wordcloud_rs::WordCloudError>(())
+    /// # Ok::<(), wordcloud::WordCloudError>(())
     /// ```
     pub fn from_bytes(bytes: Vec<u8>, cache: bool) -> Result<Self> {
         let family = font_names(&bytes);

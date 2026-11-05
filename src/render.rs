@@ -14,12 +14,12 @@ use std::io::Write;
 /// Colour parsing or rasteriser errors.
 ///
 /// ```
-/// use wordcloud_rs::{render, WordCloud};
+/// use wordcloud::{render, WordCloud};
 /// let wc = WordCloud::builder().size(200, 100).seed(3).build()?;
 /// let layout = wc.generate("rust rust safe fast fast fast")?;
 /// let img = render::to_image(&wc, &layout)?;
 /// assert_eq!((img.width, img.height, img.channels), (200, 100, 3));
-/// # Ok::<(), wordcloud_rs::WordCloudError>(())
+/// # Ok::<(), wordcloud::WordCloudError>(())
 /// ```
 pub fn to_image(wc: &WordCloud, layout: &Layout) -> Result<Canvas> {
     let cfg = &wc.config;

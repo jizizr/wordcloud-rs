@@ -76,12 +76,12 @@ fn is_py_digit(word: &str) -> bool {
 /// Returns [`crate::WordCloudError::InvalidRegex`] if `opts.regexp` is invalid.
 ///
 /// ```
-/// use wordcloud_rs::text::{process_text, TextOptions};
+/// use wordcloud::text::{process_text, TextOptions};
 /// let counts = process_text("The cat's hat. The cats sat on 42 hats!", &TextOptions::default())?;
 /// assert_eq!(counts.get("cat"), Some(&2));
 /// assert_eq!(counts.get("hat"), Some(&2));
 /// assert!(counts.get("42").is_none());
-/// # Ok::<(), wordcloud_rs::WordCloudError>(())
+/// # Ok::<(), wordcloud::WordCloudError>(())
 /// ```
 pub fn process_text(text: &str, opts: &TextOptions) -> Result<Counts> {
     let custom;

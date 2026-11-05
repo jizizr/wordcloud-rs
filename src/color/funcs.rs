@@ -50,7 +50,7 @@ impl ColorFunc {
     /// [`WordCloudError::InvalidConfig`] for unknown names.
     ///
     /// ```
-    /// use wordcloud_rs::color::ColorFunc;
+    /// use wordcloud::color::ColorFunc;
     /// assert!(ColorFunc::colormap("viridis").is_ok());
     /// assert!(ColorFunc::colormap("nope").is_err());
     /// ```
@@ -83,12 +83,12 @@ impl ColorFunc {
     /// Propagates rasteriser errors and [`WordCloudError::ColorImageTooSmall`].
     ///
     /// ```
-    /// use wordcloud_rs::{color::*, raster::*, rng::PyRandom};
+    /// use wordcloud::{color::*, raster::*, rng::PyRandom};
     /// let r = AbGlyphRasterizer::default_font(false)?;
     /// let req = ColorRequest { word: "hi", font_size: 10, position: (0, 0), orientation: Orientation::Horizontal };
     /// // random.Random(0).randint(0, 255) == 197
     /// assert_eq!(ColorFunc::RandomHue.color(&req, &mut PyRandom::new(0), &r)?, "hsl(197, 80%, 50%)");
-    /// # Ok::<(), wordcloud_rs::WordCloudError>(())
+    /// # Ok::<(), wordcloud::WordCloudError>(())
     /// ```
     pub fn color(
         &self,

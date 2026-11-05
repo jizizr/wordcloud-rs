@@ -49,13 +49,13 @@ impl ReplayRasterizer {
     /// [`WordCloudError::Json`] if the JSON is malformed.
     ///
     /// ```
-    /// use wordcloud_rs::raster::{Orientation, ReplayRasterizer, TextRasterizer};
+    /// use wordcloud::raster::{Orientation, ReplayRasterizer, TextRasterizer};
     /// let json = r#"{"bbox": {"10|0|hi": [3, 2]}, "mask": {"10|0|hi": [3, 2, "00ff00ff00ff"]}}"#;
     /// let r = ReplayRasterizer::from_json(json)?;
     /// assert_eq!(r.bbox("hi", 10, Orientation::Horizontal)?, (3, 2));
     /// assert_eq!(r.mask("hi", 10, Orientation::Horizontal)?.data, vec![0, 255, 0, 255, 0, 255]);
     /// assert!(r.bbox("hi", 11, Orientation::Horizontal).is_err());
-    /// # Ok::<(), wordcloud_rs::WordCloudError>(())
+    /// # Ok::<(), wordcloud::WordCloudError>(())
     /// ```
     pub fn from_json(json: &str) -> Result<Self> {
         let rec: Recording = serde_json::from_str(json)?;

@@ -100,7 +100,7 @@ impl OccupancyMap {
     /// with `255` per blocked pixel, as the legacy `cumsum(255 * mask)` does.
     ///
     /// ```
-    /// use wordcloud_rs::occupancy::OccupancyMap;
+    /// use wordcloud::occupancy::OccupancyMap;
     /// let m = OccupancyMap::new(4, 5, None);
     /// assert_eq!((m.height(), m.width()), (4, 5));
     /// ```
@@ -140,7 +140,7 @@ impl OccupancyMap {
     /// even when space exists. Without it, `goal` is drawn from `0..hits`.
     ///
     /// ```
-    /// use wordcloud_rs::{occupancy::OccupancyMap, rng::PyRandom};
+    /// use wordcloud::{occupancy::OccupancyMap, rng::PyRandom};
     /// let m = OccupancyMap::new(10, 10, None);
     /// let pos = m.clone().sample_position(3, 3, &mut PyRandom::new(1), true);
     /// assert!(matches!(pos, Some((i, j)) if i < 7 && j < 7));

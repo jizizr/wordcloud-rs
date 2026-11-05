@@ -30,13 +30,13 @@ fn escape(s: &str) -> String {
 /// Rasteriser errors.
 ///
 /// ```
-/// use wordcloud_rs::{svg, WordCloud};
+/// use wordcloud::{svg, WordCloud};
 /// let wc = WordCloud::builder().size(200, 100).seed(1).build()?;
 /// let layout = wc.generate("svg svg export")?;
 /// let doc = svg::to_svg(&wc, &layout)?;
 /// assert!(doc.starts_with("<svg") && doc.ends_with("</svg>"));
 /// assert!(doc.contains(">svg</text>"));
-/// # Ok::<(), wordcloud_rs::WordCloudError>(())
+/// # Ok::<(), wordcloud::WordCloudError>(())
 /// ```
 pub fn to_svg(wc: &WordCloud, layout: &Layout) -> Result<String> {
     let cfg = &wc.config;

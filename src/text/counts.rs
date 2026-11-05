@@ -34,7 +34,7 @@ fn l(k: f64, n: f64, x: f64) -> f64 {
 /// Returns 0 when one of the words makes up the whole document.
 ///
 /// ```
-/// use wordcloud_rs::text::score;
+/// use wordcloud::text::score;
 /// assert_eq!(score(1, 10, 3, 10), 0.0);
 /// assert!(score(20, 25, 22, 1000) > 30.0);
 /// ```
@@ -71,7 +71,7 @@ pub struct ProcessedTokens {
 /// `ss` is merged into its singular when the singular also occurs.
 ///
 /// ```
-/// use wordcloud_rs::text::process_tokens;
+/// use wordcloud::text::process_tokens;
 /// let words = ["Cat", "cats", "cat", "dog"].map(String::from);
 /// let p = process_tokens(&words, true);
 /// assert_eq!(p.counts["cat"], 3);

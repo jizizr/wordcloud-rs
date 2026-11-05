@@ -2,8 +2,8 @@
 //! (`tools/make_golden.py`).
 
 use serde_json::Value;
-use wordcloud_rs::rng::PyRandom;
-use wordcloud_rs::text::{TextOptions, process_text};
+use wordcloud::rng::PyRandom;
+use wordcloud::text::{TextOptions, process_text};
 
 fn golden(name: &str) -> Value {
     let path = format!("{}/tests/golden/{name}", env!("CARGO_MANIFEST_DIR"));

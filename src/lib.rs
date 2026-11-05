@@ -1,4 +1,4 @@
-//! # wordcloud-rs
+//! # wordcloud
 //!
 //! A memory-safe Rust port of the Python [`wordcloud`](https://github.com/amueller/word_cloud)
 //! package: tokenise text, count words and collocations, and pack them onto a
@@ -13,7 +13,7 @@
 //! (configurable through [`Config::legacy_quirks`]).
 //!
 //! ```
-//! use wordcloud_rs::{render, WordCloud};
+//! use wordcloud::{render, WordCloud};
 //! let wc = WordCloud::builder().size(300, 150).seed(7).build()?;
 //! let layout = wc.generate("safe fast safe rust rust rust")?;
 //! assert_eq!(layout.words[0].word, "rust");
@@ -23,7 +23,7 @@
 //!     buf
 //! };
 //! assert_eq!(&png[1..4], b"PNG");
-//! # Ok::<(), wordcloud_rs::WordCloudError>(())
+//! # Ok::<(), wordcloud::WordCloudError>(())
 //! ```
 
 // `unsafe` is denied crate-wide; the single audited exception is the bounds-check-free

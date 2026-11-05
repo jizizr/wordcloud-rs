@@ -34,12 +34,12 @@ static HSL_RE: LazyLock<Regex> = LazyLock::new(|| {
 /// [`WordCloudError::InvalidColor`] for unknown specifiers.
 ///
 /// ```
-/// use wordcloud_rs::color::{parse_color, Rgba};
+/// use wordcloud::color::{parse_color, Rgba};
 /// assert_eq!(parse_color("Red")?, Rgba([255, 0, 0, 255]));
 /// assert_eq!(parse_color("#0f08")?, Rgba([0, 255, 0, 136]));
 /// assert_eq!(parse_color("hsl(0, 100%, 50%)")?, Rgba([255, 0, 0, 255]));
 /// assert_eq!(parse_color("rgb(1, 2, 3)")?, Rgba([1, 2, 3, 255]));
-/// # Ok::<(), wordcloud_rs::WordCloudError>(())
+/// # Ok::<(), wordcloud::WordCloudError>(())
 /// ```
 pub fn parse_color(spec: &str) -> Result<Rgba> {
     let err = || WordCloudError::InvalidColor(spec.to_string());
@@ -138,7 +138,7 @@ pub fn hls_to_rgb(h: f64, l: f64, s: f64) -> (f64, f64, f64) {
 /// CPython `colorsys.rgb_to_hsv`.
 ///
 /// ```
-/// use wordcloud_rs::color::rgb_to_hsv;
+/// use wordcloud::color::rgb_to_hsv;
 /// assert_eq!(rgb_to_hsv(1.0, 0.0, 0.0), (0.0, 1.0, 1.0));
 /// ```
 pub fn rgb_to_hsv(r: f64, g: f64, b: f64) -> (f64, f64, f64) {

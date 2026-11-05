@@ -1,5 +1,5 @@
 [package]
-name = "wordcloud-rs"
+name = "wordcloud"
 version = "0.1.0"
 edition = "2024"
 description = "Seed-exact, fast Rust port of the Python wordcloud generator (amueller/word_cloud)"
@@ -8,6 +8,7 @@ repository = "https://github.com/jizizr/wordcloud-rs"
 readme = "README.md"
 keywords = ["wordcloud", "word-cloud", "visualization", "text"]
 categories = ["visualization", "command-line-utilities"]
+exclude = ["/docs", "/tools", "/.gitignore"]
 
 [dependencies]
 ab_glyph = "0.2.32"
@@ -26,6 +27,8 @@ proptest = "1.12.0"
 [[bin]]
 name = "wordcloud"
 path = "src/main.rs"
+# The library has the same name; keep rustdoc output for the library only.
+doc = false
 
 [profile.release]
 opt-level = 3

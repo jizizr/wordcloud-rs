@@ -93,10 +93,10 @@ impl Mask {
     /// [`WordCloudError::InvalidConfig`] on a size mismatch or zero channels.
     ///
     /// ```
-    /// use wordcloud_rs::Mask;
+    /// use wordcloud::Mask;
     /// let m = Mask::from_pixels(2, 1, 3, &[255, 255, 255, 0, 255, 255])?;
     /// assert_eq!(m.blocked, vec![true, false]);
-    /// # Ok::<(), wordcloud_rs::WordCloudError>(())
+    /// # Ok::<(), wordcloud::WordCloudError>(())
     /// ```
     pub fn from_pixels(width: usize, height: usize, channels: usize, data: &[u8]) -> Result<Self> {
         if channels == 0 || data.len() != width * height * channels {
@@ -120,11 +120,11 @@ impl Mask {
 /// Fluent builder for [`WordCloud`].
 ///
 /// ```
-/// use wordcloud_rs::WordCloud;
+/// use wordcloud::WordCloud;
 /// let wc = WordCloud::builder().size(300, 150).max_words(50).seed(1).build()?;
 /// let layout = wc.generate("alpha beta beta gamma gamma gamma")?;
 /// assert_eq!(layout.words[0].word, "gamma");
-/// # Ok::<(), wordcloud_rs::WordCloudError>(())
+/// # Ok::<(), wordcloud::WordCloudError>(())
 /// ```
 pub struct WordCloudBuilder {
     config: Config,

@@ -1,4 +1,7 @@
-# wordcloud-rs
+# wordcloud (Rust)
+
+[![crates.io](https://img.shields.io/crates/v/wordcloud.svg)](https://crates.io/crates/wordcloud)
+[![docs.rs](https://docs.rs/wordcloud/badge.svg)](https://docs.rs/wordcloud)
 
 A Rust port of [amueller/word_cloud](https://github.com/amueller/word_cloud) (Python + Cython, v1.9.6).
 
@@ -10,12 +13,19 @@ A Rust port of [amueller/word_cloud](https://github.com/amueller/word_cloud) (Py
   (bounds-check elision in the occupancy window counter, guarded by an `assert!`),
   kept only because benchmarks show it is 12–15% faster than the safe forms.
 
+## Install
+
+```bash
+cargo install wordcloud      # CLI
+cargo add wordcloud          # library
+```
+
 ## CLI
 
 Same flags and defaults as `wordcloud_cli`:
 
 ```bash
-cargo run --release -- --text alice.txt --imagefile alice.png --random_state 1
+wordcloud --text alice.txt --imagefile alice.png --random_state 1
 ```
 
 Extras: `--colormap` actually works (it is silently ignored in Python),
@@ -24,7 +34,7 @@ Extras: `--colormap` actually works (it is silently ignored in Python),
 ## Library
 
 ```rust
-use wordcloud_rs::{render, WordCloud};
+use wordcloud::{render, WordCloud};
 let wc = WordCloud::builder().size(800, 400).max_words(300).seed(1).build()?;
 let layout = wc.generate(&std::fs::read_to_string("alice.txt")?)?;
 render::write_png(&render::to_image(&wc, &layout)?, std::fs::File::create("alice.png")?)?;

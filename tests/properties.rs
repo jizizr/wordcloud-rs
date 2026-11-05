@@ -1,10 +1,10 @@
 //! Property-based tests (proptest).
 
 use proptest::prelude::*;
-use wordcloud_rs::occupancy::{OccupancyMap, Pixels};
-use wordcloud_rs::rng::PyRandom;
-use wordcloud_rs::text::{TextOptions, process_text};
-use wordcloud_rs::{Mask, WordCloud};
+use wordcloud::occupancy::{OccupancyMap, Pixels};
+use wordcloud::rng::PyRandom;
+use wordcloud::text::{TextOptions, process_text};
+use wordcloud::{Mask, WordCloud};
 
 proptest! {
     #[test]

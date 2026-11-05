@@ -1,13 +1,13 @@
 //! Engine edge cases: errors, single words, repeat, recolor, trait defaults.
 
-use wordcloud_rs::color::ColorFunc;
-use wordcloud_rs::raster::{GlyphMask, Orientation, ReplayRasterizer, TextRasterizer};
-use wordcloud_rs::{Config, Mask, WordCloud, WordCloudError, render, svg};
+use wordcloud::color::ColorFunc;
+use wordcloud::raster::{GlyphMask, Orientation, ReplayRasterizer, TextRasterizer};
+use wordcloud::{Config, Mask, WordCloud, WordCloudError, render, svg};
 
 /// A trivial rasteriser: every character is a solid 1×size/2 block.
 struct Blocks;
 impl TextRasterizer for Blocks {
-    fn bbox(&self, text: &str, size: u32, o: Orientation) -> wordcloud_rs::Result<(usize, usize)> {
+    fn bbox(&self, text: &str, size: u32, o: Orientation) -> wordcloud::Result<(usize, usize)> {
         let (w, h) = (text.chars().count() * size as usize / 2, size as usize);
         Ok(if o == Orientation::Horizontal {
             (w, h)
@@ -15,7 +15,7 @@ impl TextRasterizer for Blocks {
             (h, w)
         })
     }
-    fn mask(&self, text: &str, size: u32, o: Orientation) -> wordcloud_rs::Result<GlyphMask> {
+    fn mask(&self, text: &str, size: u32, o: Orientation) -> wordcloud::Result<GlyphMask> {
         let (w, h) = self.bbox(text, size, o)?;
         Ok(GlyphMask {
             width: w,

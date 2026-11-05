@@ -14,7 +14,7 @@
 //! * `uniform(a, b)` → `a + (b - a) * random()`.
 //!
 //! ```
-//! use wordcloud_rs::rng::PyRandom;
+//! use wordcloud::rng::PyRandom;
 //! let mut rng = PyRandom::new(42);
 //! // Same value as `random.Random(42).random()` in CPython.
 //! assert_eq!(rng.random(), 0.6394267984578837);
@@ -40,7 +40,7 @@ impl PyRandom {
     /// Negative seeds use their absolute value, as CPython does.
     ///
     /// ```
-    /// use wordcloud_rs::rng::PyRandom;
+    /// use wordcloud::rng::PyRandom;
     /// assert_eq!(PyRandom::new(-7).random(), PyRandom::new(7).random());
     /// ```
     pub fn new(seed: i64) -> Self {
@@ -174,7 +174,7 @@ impl PyRandom {
     /// Equivalent of `random.randint(a, b)`: uniform integer in `[a, b]` inclusive.
     ///
     /// ```
-    /// use wordcloud_rs::rng::PyRandom;
+    /// use wordcloud::rng::PyRandom;
     /// let mut rng = PyRandom::new(0);
     /// let v = rng.randint(0, 255);
     /// assert!((0..=255).contains(&v));

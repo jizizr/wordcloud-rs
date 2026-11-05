@@ -11,7 +11,7 @@ use crate::raster::GlyphMask;
 /// Pillow's `BLEND` macro.
 ///
 /// ```
-/// use wordcloud_rs::canvas::blend;
+/// use wordcloud::canvas::blend;
 /// assert_eq!(blend(255, 10, 200), 200);
 /// assert_eq!(blend(0, 10, 200), 10);
 /// assert_eq!(blend(128, 0, 255), 128);
@@ -40,7 +40,7 @@ impl Canvas {
     /// Creates a canvas filled with `fill` (one value per channel).
     ///
     /// ```
-    /// use wordcloud_rs::canvas::Canvas;
+    /// use wordcloud::canvas::Canvas;
     /// let c = Canvas::new(3, 2, &[1, 2, 3]);
     /// assert_eq!(c.data.len(), 18);
     /// assert_eq!(&c.data[3..6], &[1, 2, 3]);

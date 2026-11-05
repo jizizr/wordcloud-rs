@@ -31,7 +31,7 @@ impl Orientation {
     /// The other orientation.
     ///
     /// ```
-    /// use wordcloud_rs::raster::Orientation;
+    /// use wordcloud::raster::Orientation;
     /// assert_eq!(Orientation::Horizontal.flipped(), Orientation::Vertical);
     /// ```
     pub fn flipped(self) -> Self {
@@ -57,7 +57,7 @@ impl GlyphMask {
     /// Rotates the mask 90° counter-clockwise (Pillow `ROTATE_90`).
     ///
     /// ```
-    /// use wordcloud_rs::raster::GlyphMask;
+    /// use wordcloud::raster::GlyphMask;
     /// let m = GlyphMask { width: 2, height: 1, data: vec![1, 2] };
     /// let r = m.rotate_ccw();
     /// assert_eq!((r.width, r.height, r.data), (1, 2, vec![2, 1]));
