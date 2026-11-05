@@ -6,11 +6,64 @@
 //! final layout. Every map here is therefore an [`IndexMap`] and every
 //! iteration follows the legacy order exactly.
 
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use std::collections::{HashMap, HashSet};
+use std::hash::{BuildHasherDefault, Hasher};
 
 /// Ordered word → count map (Python `dict` semantics).
 pub type Counts = IndexMap<String, i64>;
+
+/// FxHash (rustc's hasher): much faster than SipHash for the short keys counted
+/// here, and HashDoS resistance is irrelevant for a local word count.
+#[derive(Default, Clone, Copy)]
+pub(crate) struct FxHasher(u64);
+
+impl Hasher for FxHasher {
+    #[inline]
+    fn write(&mut self, bytes: &[u8]) {
+        let mut chunks = bytes.chunks_exact(8);
+        for c in &mut chunks {
+            self.add(u64::from_le_bytes(c.try_into().expect("8 bytes")));
+        }
+        let rest = chunks.remainder();
+        if !rest.is_empty() {
+            let mut buf = [0u8; 8];
+            buf[..rest.len()].copy_from_slice(rest);
+            self.add(u64::from_le_bytes(buf) ^ (rest.len() as u64) << 56);
+        }
+    }
+    #[inline]
+    fn write_u8(&mut self, i: u8) {
+        self.add(u64::from(i));
+    }
+    #[inline]
+    fn write_u32(&mut self, i: u32) {
+        self.add(u64::from(i));
+    }
+    #[inline]
+    fn write_u64(&mut self, i: u64) {
+        self.add(i);
+    }
+    #[inline]
+    fn write_usize(&mut self, i: usize) {
+        self.add(i as u64);
+    }
+    #[inline]
+    fn finish(&self) -> u64 {
+        self.0
+    }
+}
+
+impl FxHasher {
+    #[inline]
+    fn add(&mut self, word: u64) {
+        self.0 = (self.0.rotate_left(5) ^ word).wrapping_mul(0x51_7c_c1_b7_27_22_0a_95);
+    }
+}
+
+pub(crate) type FxBuild = BuildHasherDefault<FxHasher>;
+pub(crate) type FxIndexSet<T> = IndexSet<T, FxBuild>;
+pub(crate) type FxIndexMap<K, V> = IndexMap<K, V, FxBuild>;
 
 /// Drops the last `n` characters (Python `s[:-n]` on code points).
 pub(crate) fn drop_last_chars(s: &str, n: usize) -> &str {
@@ -78,12 +131,29 @@ pub struct ProcessedTokens {
 /// assert_eq!(p.standard_forms["cats"], "cat");
 /// ```
 pub fn process_tokens(words: &[String], normalize_plurals: bool) -> ProcessedTokens {
-    let mut d: IndexMap<String, IndexMap<String, i64>> = IndexMap::new();
-    for word in words {
+    let mut distinct: FxIndexMap<&str, i64> = FxIndexMap::default();
+    for w in words {
+        *distinct.entry(w.as_str()).or_insert(0) += 1;
+    }
+    process_weighted(distinct.into_iter(), normalize_plurals)
+}
+
+/// [`process_tokens`] on distinct words with their counts, in first-seen order.
+///
+/// The legacy algorithm only depends on the order in which each word is first
+/// seen and on how often it occurs, so counting duplicates up front gives the
+/// same result while lower-casing each distinct word only once.
+pub(crate) fn process_weighted<S: AsRef<str>>(
+    words: impl Iterator<Item = (S, i64)>,
+    normalize_plurals: bool,
+) -> ProcessedTokens {
+    let mut d: FxIndexMap<String, IndexMap<String, i64>> = FxIndexMap::default();
+    for (word, count) in words {
+        let word = word.as_ref();
         *d.entry(word.to_lowercase())
             .or_default()
-            .entry(word.clone())
-            .or_insert(0) += 1;
+            .entry(word.to_string())
+            .or_insert(0) += count;
     }
     let mut merged_plurals: Vec<(String, String)> = Vec::new();
     if normalize_plurals {
@@ -138,16 +208,59 @@ pub fn unigrams_and_bigrams(
     normalize_plurals: bool,
     collocation_threshold: f64,
 ) -> Counts {
-    let is_stop = |w: &String| stopwords.contains(&w.to_lowercase());
-    let bigrams: Vec<String> = words
-        .windows(2)
-        .filter(|p| !is_stop(&p[0]) && !is_stop(&p[1]))
-        .map(|p| format!("{} {}", p[0], p[1]))
+    let mut vocab: FxIndexSet<&str> = FxIndexSet::default();
+    let seq: Vec<u32> = words
+        .iter()
+        .map(|w| vocab.insert_full(w.as_str()).0 as u32)
         .collect();
-    let unigrams: Vec<String> = words.iter().filter(|w| !is_stop(w)).cloned().collect();
-    let n_words = unigrams.len() as i64;
-    let uni = process_tokens(&unigrams, normalize_plurals);
-    let bi = process_tokens(&bigrams, normalize_plurals);
+    let stop: Vec<bool> = vocab
+        .iter()
+        .map(|w| stopwords.contains(&w.to_lowercase()))
+        .collect();
+    let vocab: Vec<&str> = vocab.into_iter().collect();
+    unigrams_and_bigrams_ids(
+        &vocab,
+        &seq,
+        &stop,
+        normalize_plurals,
+        collocation_threshold,
+    )
+}
+
+/// [`unigrams_and_bigrams`] on interned tokens: `seq` indexes `vocab`, and
+/// `stop[i]` says whether `vocab[i]` is a stopword.
+pub(crate) fn unigrams_and_bigrams_ids(
+    vocab: &[&str],
+    seq: &[u32],
+    stop: &[bool],
+    normalize_plurals: bool,
+    collocation_threshold: f64,
+) -> Counts {
+    let is_stop = |id: u32| stop[id as usize];
+    let mut bigram_ids: FxIndexMap<(u32, u32), i64> = FxIndexMap::default();
+    for p in seq.windows(2) {
+        if !is_stop(p[0]) && !is_stop(p[1]) {
+            *bigram_ids.entry((p[0], p[1])).or_insert(0) += 1;
+        }
+    }
+    let mut unigram_ids: FxIndexMap<u32, i64> = FxIndexMap::default();
+    let mut n_words = 0i64;
+    for &id in seq {
+        if !is_stop(id) {
+            *unigram_ids.entry(id).or_insert(0) += 1;
+            n_words += 1;
+        }
+    }
+    let uni = process_weighted(
+        unigram_ids.iter().map(|(&id, &c)| (vocab[id as usize], c)),
+        normalize_plurals,
+    );
+    let bi = process_weighted(
+        bigram_ids
+            .iter()
+            .map(|(&(a, b), &c)| (format!("{} {}", vocab[a as usize], vocab[b as usize]), c)),
+        normalize_plurals,
+    );
     let orig_counts = uni.counts.clone();
     let mut counts = uni.counts;
     let standard = |w: &str| -> String {
