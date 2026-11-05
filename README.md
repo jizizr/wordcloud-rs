@@ -3,7 +3,52 @@
 [![crates.io](https://img.shields.io/crates/v/wordcloud.svg)](https://crates.io/crates/wordcloud)
 [![docs.rs](https://docs.rs/wordcloud/badge.svg)](https://docs.rs/wordcloud)
 
-A Rust port of [amueller/word_cloud](https://github.com/amueller/word_cloud) (Python + Cython, v1.9.6).
+**English** | [简体中文](README.zh-CN.md)
+
+A fast word cloud generator for Rust, as a library and a command-line tool. It is
+a port of the Python [amueller/word_cloud](https://github.com/amueller/word_cloud)
+package (v1.9.6), with the same options and defaults.
+
+<table>
+  <tr>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/gallery/mask.png" width="100%" alt="Word cloud shaped like a cloud, with an outline"><br>
+      <b>Any shape</b><br>
+      <sub>Use a mask image, with an optional outline<br><code>--mask shape.png --contour_width 3</code></sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/gallery/image_colors.png" width="100%" alt="Heart-shaped word cloud coloured in rainbow bands"><br>
+      <b>Colours from an image</b><br>
+      <sub>Each word takes the colour of the picture behind it<br><code>--colormask picture.png</code></sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/gallery/colormap.png" width="100%" alt="Word cloud on black using the plasma colormap"><br>
+      <b>Colormaps</b><br>
+      <sub>18 built in, from viridis to jet<br><code>--colormap plasma</code></sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/gallery/cjk.png" width="100%" alt="Chinese word cloud"><br>
+      <b>Chinese and any font</b><br>
+      <sub>Load any TTF, OTF or TTC font<br><code>--fontfile LXGWWenKai.ttf</code></sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/gallery/single_color.png" width="100%" alt="Word cloud in shades of one rust colour, all horizontal"><br>
+      <b>One colour, horizontal only</b><br>
+      <sub>Shades of a single colour; control word orientation<br><code>--color "#b7410e" --prefer_horizontal 1</code></sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/gallery/transparent.png" width="100%" alt="Word cloud with a transparent background"><br>
+      <b>Transparent background</b><br>
+      <sub>RGBA PNG, ready to put on any page<br><code>--mode RGBA --background None</code></sub>
+    </td>
+  </tr>
+</table>
+
+<sub>Every image above was made by this crate. Regenerate them with
+<a href="docs/gallery/make_gallery.py"><code>docs/gallery/make_gallery.py</code></a>.
+The Chinese tile uses the LXGW WenKai font (SIL OFL, not bundled).</sub>
 
 > **Package name:** this repository is `wordcloud-rs`, but the crate is published
 > on crates.io as **[`wordcloud`](https://crates.io/crates/wordcloud)**, the same
@@ -11,6 +56,15 @@ A Rust port of [amueller/word_cloud](https://github.com/amueller/word_cloud) (Py
 > unrelated project. Install with `cargo add wordcloud` and import with
 > `use wordcloud::...`.
 
+## Features
+
+* **Input**: raw text (tokenising, stopwords, plural folding and two-word phrases
+  such as "White Rabbit" are handled for you) or your own `(word, weight)` list.
+* **Shape and look**: masks with outlines, colormaps, a single colour, colours
+  from an image or your own colour function, any font, margins, word orientation
+  and size scaling.
+* **Output**: PNG (RGB or transparent RGBA), SVG, or the raw layout (word, size,
+  position, colour) to draw yourself.
 * **Seed-exact**: CPython's Mersenne Twister, Python dict ordering, Pillow's
   `BLEND` and every legacy layout quirk are reproduced, so with the same glyph
   masks the layout and the PNG pixels match the Python package byte for byte.
@@ -125,6 +179,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+**Chinese, Japanese and other languages without spaces**: words are split on
+non-letter characters, so a whole sentence counts as one word. Segment the text
+first (for example with [`jieba-rs`](https://crates.io/crates/jieba-rs)) and
+join the words with spaces, or pass `(word, weight)` pairs to
+`generate_from_frequencies`. You also need a font that has the characters:
+`--fontfile` on the CLI, or in code:
+
+```rust
+use std::fs::{self, File};
+use wordcloud::{raster::AbGlyphRasterizer, render, WordCloud};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let font = AbGlyphRasterizer::from_bytes(fs::read("LXGWWenKai-Medium.ttf")?, true)?;
+    let freqs: Vec<(String, f64)> = [("词云", 60.0), ("数据", 45.0), ("可视化", 40.0), ("开源", 32.0)]
+        .into_iter()
+        .map(|(w, n)| (w.to_string(), n))
+        .collect();
+
+    let wc = WordCloud::builder().rasterizer(Box::new(font)).seed(1).build()?;
+    let layout = wc.generate_from_frequencies(&freqs)?;
+    render::write_png(&render::to_image(&wc, &layout)?, File::create("zh.png")?)?;
+    Ok(())
+}
+```
+
 Stopwords, collocations, the tokeniser regex and the minimum word length can be
 set through `Config::text`. See the [API docs](https://docs.rs/wordcloud) for every option.
 
@@ -153,7 +232,7 @@ engine. `tools/parity.py` then compares layouts and pixels.
 | `src/` | Library and `wordcloud` binary |
 | `tests/` | Golden-data parity, property, CLI and engine tests (`tests/golden/` holds data generated from the Python package) |
 | `tools/` | `record_pillow.py` + `parity.py` (A/B harness), `make_golden.py`, `gen_tables.py`, `bench.py` |
-| `docs/` | Migration blueprint, telemetry and the interactive report (`migration_infographic.html`) |
+| `docs/` | Migration blueprint, telemetry, the interactive report (`migration_infographic.html`) and the README gallery (`gallery/`) |
 
 ## License
 
