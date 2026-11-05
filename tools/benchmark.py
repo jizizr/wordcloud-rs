@@ -8,7 +8,9 @@ the README table, together with the machine it ran on.
 
 For every workload each tool is run once per seed (0 .. runs-1) as a separate
 process; the table reports the median wall-clock time and the median peak
-resident memory (RSS) of that process. "Python, in-process" times only
+resident memory (RSS) of that process. Both are measured by the small launcher
+`tools/peak_rss.rs` (compiled automatically with `rustc`), because a child's peak
+RSS on Linux starts from the memory of whatever process spawned it. "Python, in-process" times only
 `WordCloud(...).generate(text).to_image()` inside one interpreter, i.e. without
 interpreter start-up and imports, which is the fairest comparison for library use.
 
@@ -22,12 +24,12 @@ import platform
 import statistics
 import subprocess
 import tempfile
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GOLDEN = ROOT / "tests" / "golden"
 RUST = ROOT / "target" / "release" / "wordcloud"
+PEAK_RSS = ROOT / "target" / "peak_rss"
 
 WORKLOADS = [
     ("Default, 400×200", ["--text", GOLDEN / "alice.txt"], {}),
@@ -79,15 +81,18 @@ print(statistics.median(times))
 """
 
 
+def build_launcher():
+    subprocess.run(["rustc", "-O", "--edition", "2024", ROOT / "tools" / "peak_rss.rs",
+                    "-o", PEAK_RSS], check=True)
+
+
 def run_once(cmd):
     """Wall-clock ms and peak RSS (MB) of one child process."""
-    t = time.perf_counter()
-    proc = subprocess.Popen([str(c) for c in cmd], stdout=subprocess.DEVNULL)
-    _, status, usage = os.wait4(proc.pid, 0)
-    ms = (time.perf_counter() - t) * 1000
-    if status != 0:
-        raise SystemExit(f"command failed: {cmd}")
-    return ms, usage.ru_maxrss / 1024
+    res = subprocess.run([str(PEAK_RSS), *map(str, cmd)], capture_output=True, text=True)
+    if res.returncode != 0:
+        raise SystemExit(f"command failed: {cmd}\n{res.stderr}")
+    ms, kib = res.stdout.split()
+    return float(ms), int(kib) / 1024
 
 
 def measure(base_cmd, args, runs, out):
@@ -130,6 +135,7 @@ def main():
     ap.add_argument("--runs", type=int, default=10, help="seeds per workload")
     ap.add_argument("--stress-runs", type=int, default=3, help="seeds per stress workload")
     a = ap.parse_args()
+    build_launcher()
 
     print("\n".join(f"- {line}" for line in machine(a.python)))
     print(f"- Runs: {a.runs} seeds per workload ({a.stress_runs} for stress tests), "
