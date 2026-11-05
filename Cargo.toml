@@ -1,0 +1,38 @@
+[package]
+name = "wordcloud-rs"
+version = "0.1.0"
+edition = "2024"
+description = "Seed-exact, fast Rust port of the Python wordcloud generator (amueller/word_cloud)"
+license = "MIT"
+repository = "https://github.com/jizizr/wordcloud-rs"
+readme = "README.md"
+keywords = ["wordcloud", "word-cloud", "visualization", "text"]
+categories = ["visualization", "command-line-utilities"]
+
+[dependencies]
+ab_glyph = "0.2.32"
+clap = { version = "4.6.7", features = ["derive"] }
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+indexmap = "2.14.2"
+regex = "1.13.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
+thiserror = "2.0.21"
+ttf-parser = "0.25.1"
+
+[dev-dependencies]
+proptest = "1.12.0"
+
+[[bin]]
+name = "wordcloud"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[features]
+# Literal transliteration kernels, used only to benchmark the `safe_rust` stage.
+naive = []
