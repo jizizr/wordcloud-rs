@@ -8,7 +8,7 @@ repository = "https://github.com/jizizr/wordcloud-rs"
 readme = "README.md"
 keywords = ["wordcloud", "word-cloud", "visualization", "text"]
 categories = ["visualization", "command-line-utilities"]
-exclude = ["/docs", "/tools", "/.gitignore"]
+exclude = ["/docs", "/tools", "/examples/data", "/.gitignore"]
 
 [dependencies]
 ab_glyph = "0.2.32"
@@ -22,6 +22,10 @@ thiserror = "2.0.21"
 ttf-parser = "0.25.1"
 
 [dev-dependencies]
+color_quant = "2.0.0"
+fast2s = "0.3.1"
+jieba-rs = { version = "0.11", features = ["tfidf"] }
+png = "0.18.1"
 proptest = "1.12.0"
 
 [[bin]]
