@@ -11,43 +11,43 @@
 <table>
   <tr>
     <td width="33%" align="center" valign="top">
-      <img src="docs/gallery/zh/mask.png" width="100%" alt="云朵形状的中文词云，带轮廓线"><br>
+      <img src="docs/gallery/zh/mask.png" width="100%" alt="云朵形状的西游记词云，带轮廓线"><br>
       <b>任意形状</b><br>
-      <sub>用一张遮罩图片决定形状，可加轮廓线<br><code>--mask shape.png --contour_width 3</code></sub>
+      <sub>用一张遮罩图片决定形状，可加轮廓线<br><code>--mask shape.png --contour_width 3</code><br><a href="examples/shape_mask.rs">examples/shape_mask.rs</a></sub>
     </td>
     <td width="33%" align="center" valign="top">
-      <img src="docs/gallery/zh/image_colors.png" width="100%" alt="心形中文词云，按彩虹色带着色"><br>
+      <img src="docs/gallery/zh/image_colors.png" width="100%" alt="心形的红楼梦词云，按彩虹色带着色"><br>
       <b>从图片取色</b><br>
-      <sub>每个词使用它背后图片区域的颜色<br><code>--colormask picture.png</code></sub>
+      <sub>每个词使用它背后图片区域的颜色<br><code>--colormask picture.png</code><br><a href="examples/image_colors.rs">examples/image_colors.rs</a></sub>
     </td>
     <td width="33%" align="center" valign="top">
-      <img src="docs/gallery/zh/colormap.png" width="100%" alt="黑色背景、plasma 配色的西游记词云"><br>
+      <img src="docs/gallery/zh/colormap.png" width="100%" alt="黑色背景、plasma 配色的三国演义词云"><br>
       <b>配色方案</b><br>
-      <sub>内置 18 种，从 viridis 到 jet<br><code>--colormap plasma</code></sub>
+      <sub>内置 18 种，从 viridis 到 jet<br><code>--colormap plasma</code><br><a href="examples/colormap.rs">examples/colormap.rs</a></sub>
     </td>
   </tr>
   <tr>
     <td width="33%" align="center" valign="top">
-      <img src="docs/gallery/zh/font.png" width="100%" alt="书法字体的诗词词云"><br>
+      <img src="docs/gallery/zh/font.png" width="100%" alt="书法字体的诗经词云"><br>
       <b>任意字体</b><br>
-      <sub>支持 TTF、OTF、TTC，书法字体也可以<br><code>--fontfile MaShanZheng-Regular.ttf</code></sub>
+      <sub>支持 TTF、OTF、TTC，书法字体也可以<br><code>--fontfile MaShanZheng-Regular.ttf</code><br><a href="examples/custom_font.rs">examples/custom_font.rs</a></sub>
     </td>
     <td width="33%" align="center" valign="top">
-      <img src="docs/gallery/zh/single_color.png" width="100%" alt="单一铁锈色深浅变化、全部横排的词云"><br>
+      <img src="docs/gallery/zh/single_color.png" width="100%" alt="单一铁锈色、全部横排的水浒传词云"><br>
       <b>单色、只横排</b><br>
-      <sub>同一颜色的不同深浅，可控制文字方向<br><code>--color "#b7410e" --prefer_horizontal 1</code></sub>
+      <sub>同一颜色的不同深浅，可控制文字方向<br><code>--color "#b7410e" --prefer_horizontal 1</code><br><a href="examples/single_color.rs">examples/single_color.rs</a></sub>
     </td>
     <td width="33%" align="center" valign="top">
-      <img src="docs/gallery/zh/transparent.png" width="100%" alt="透明背景的美食词云"><br>
+      <img src="docs/gallery/zh/transparent.png" width="100%" alt="透明背景的聊斋志异词云"><br>
       <b>透明背景</b><br>
-      <sub>输出 RGBA PNG，可直接放到任何页面上<br><code>--mode RGBA --background None</code></sub>
+      <sub>输出 RGBA PNG，可直接放到任何页面上<br><code>--mode RGBA --background None</code><br><a href="examples/transparent.rs">examples/transparent.rs</a></sub>
     </td>
   </tr>
 </table>
 
-<sub>以上图片都由本库生成，可以用
-<a href="docs/gallery/make_gallery.py"><code>docs/gallery/make_gallery.py</code></a> 重新生成。
-词表为手工整理的主题词；字体为霞鹜文楷、站酷快乐体、思源宋体和马善政楷书（均为 SIL OFL 开源字体，未随本库分发）。</sub>
+<sub>以上图片全部由 <a href="examples/"><code>examples/</code></a> 里的代码生成（见下文<a href="#示例">示例</a>）。
+文字取自《西游记》《红楼梦》《三国演义》《诗经》《水浒传》《聊斋志异》的原文节选，经分词和 TF-IDF 统计得到关键词；
+字体为霞鹜文楷、站酷快乐体、思源宋体和马善政楷书（均为 SIL OFL 开源字体）。</sub>
 
 > **关于包名：** 本仓库名为 `wordcloud-rs`，但在 crates.io 上发布的名字是
 > **[`wordcloud`](https://crates.io/crates/wordcloud)**，与 `pip install wordcloud` 一致。
@@ -201,6 +201,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 停用词、双词短语、分词正则和最小词长都可以通过 `Config::text` 设置。全部选项见
 [API 文档](https://docs.rs/wordcloud)。
 
+## 示例
+
+画廊里的每张图都对应一个可以直接运行的示例，同时生成英文版和中文版。中文字体（SIL OFL 许可）
+由脚本下载，不随仓库分发：
+
+```bash
+sh examples/fetch_fonts.sh
+cargo run --release --example shape_mask
+```
+
+| 示例 | 演示内容 |
+|---|---|
+| [`shape_mask`](examples/shape_mask.rs) | 构造 `Mask` 遮罩并绘制轮廓线 |
+| [`image_colors`](examples/image_colors.rs) | 用 `ImageColorGenerator` 从图片取色 |
+| [`colormap`](examples/colormap.rs) | 内置配色方案 |
+| [`custom_font`](examples/custom_font.rs) | 加载 TTF/OTF 字体、中文词云 |
+| [`single_color`](examples/single_color.rs) | 单色、只横排、字号缩放 |
+| [`transparent`](examples/transparent.rs) | 无背景的 RGBA 输出 |
+
+中文示例使用古登堡计划（Project Gutenberg）中已进入公有领域的古典名著（节选放在
+[`examples/data/zh/`](examples/data/zh/)），先用 [`fast2s`](https://crates.io/crates/fast2s)
+繁转简，再用 [`jieba-rs`](https://crates.io/crates/jieba-rs) 分词并按 TF-IDF 提取关键词
+（见 [`examples/common/mod.rs`](examples/common/mod.rs)）。
+
 ## 字体渲染与一致性
 
 默认的光栅化器是纯 Rust 的 `ab_glyph`。它与 FreeType + HarfBuzz 的字形微调略有差别，
@@ -225,6 +249,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `tests/` | 黄金数据一致性测试、属性测试、命令行测试和引擎测试（`tests/golden/` 存放由 Python 包生成的数据） |
 | `tools/` | `record_pillow.py` + `parity.py`（A/B 对比工具）、`make_golden.py`、`gen_tables.py`、`bench.py` |
 | `docs/` | 迁移方案、遥测数据、交互式报告（`migration_infographic.html`）以及 README 示例图（`gallery/`） |
+| `examples/` | 生成示例图的代码，输入文本在 `examples/data/` |
 
 ## 许可证
 

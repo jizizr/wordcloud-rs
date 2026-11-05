@@ -4,4 +4,4 @@
 /pgo-data
 *.profraw
 __pycache__/
-docs/gallery/_src/
+/examples/data/fonts/
