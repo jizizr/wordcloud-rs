@@ -5,6 +5,12 @@
 
 A Rust port of [amueller/word_cloud](https://github.com/amueller/word_cloud) (Python + Cython, v1.9.6).
 
+> **Package name:** this repository is `wordcloud-rs`, but the crate is published
+> on crates.io as **[`wordcloud`](https://crates.io/crates/wordcloud)**, the same
+> name as `pip install wordcloud`. The crates.io crate called `wordcloud-rs` is an
+> unrelated project. Install with `cargo add wordcloud` and import with
+> `use wordcloud::...`.
+
 * **Seed-exact**: CPython's Mersenne Twister, Python dict ordering, Pillow's
   `BLEND` and every legacy layout quirk are reproduced, so with the same glyph
   masks the layout and the PNG pixels match the Python package byte for byte.
@@ -16,29 +22,111 @@ A Rust port of [amueller/word_cloud](https://github.com/amueller/word_cloud) (Py
 ## Install
 
 ```bash
-cargo install wordcloud      # CLI
+cargo install wordcloud      # CLI, installs the `wordcloud` binary
 cargo add wordcloud          # library
 ```
 
 ## CLI
 
-Same flags and defaults as `wordcloud_cli`:
+Same flags and defaults as Python's `wordcloud_cli`. Run `wordcloud --help` for the full list.
 
 ```bash
+# Text file in, PNG out, fixed seed for a reproducible layout
 wordcloud --text alice.txt --imagefile alice.png --random_state 1
+
+# Read from stdin, write to stdout
+cat alice.txt | wordcloud > alice.png
+
+# Larger canvas, white background, a colormap, and an SVG next to the PNG
+wordcloud --text alice.txt --imagefile alice.png --svgfile alice.svg \
+  --width 800 --height 400 --background white --colormap plasma
+
+# Fill a shape: white pixels in the mask stay empty
+wordcloud --text alice.txt --mask alice_mask.png --contour_width 3 \
+  --contour_color steelblue --imagefile alice.png
 ```
 
-Extras: `--colormap` actually works (it is silently ignored in Python),
-`--svgfile out.svg`, `--fix-legacy-bugs`.
+Extras over Python: `--colormap` actually works (Python silently ignores it),
+`--svgfile out.svg`, and `--fix-legacy-bugs`.
 
 ## Library
 
+Minimal example: text in, PNG out.
+
 ```rust
+use std::fs::{self, File};
 use wordcloud::{render, WordCloud};
-let wc = WordCloud::builder().size(800, 400).max_words(300).seed(1).build()?;
-let layout = wc.generate(&std::fs::read_to_string("alice.txt")?)?;
-render::write_png(&render::to_image(&wc, &layout)?, std::fs::File::create("alice.png")?)?;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let text = fs::read_to_string("alice.txt")?;
+
+    let wc = WordCloud::builder()
+        .size(800, 400)
+        .max_words(300)
+        .seed(1) // same seed, same layout
+        .build()?;
+
+    let layout = wc.generate(&text)?;
+    render::write_png(&render::to_image(&wc, &layout)?, File::create("alice.png")?)?;
+    Ok(())
+}
 ```
+
+Your own frequencies, colours and SVG output:
+
+```rust
+use wordcloud::{color::ColorFunc, svg, Config, WordCloud};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let freqs = vec![
+        ("Rust".to_string(), 10.0),
+        ("safe".to_string(), 6.0),
+        ("fast".to_string(), 5.0),
+        ("cargo".to_string(), 3.0),
+    ];
+
+    let config = Config {
+        width: 600,
+        height: 300,
+        background_color: Some("white".into()),
+        ..Config::default()
+    };
+    let wc = WordCloud::builder()
+        .config(config)
+        .color_func(ColorFunc::colormap("plasma")?) // or ColorFunc::single("darkblue")?
+        .seed(7)
+        .build()?;
+
+    let layout = wc.generate_from_frequencies(&freqs)?;
+    for w in &layout.words {
+        println!("{} size={} at {:?}", w.word, w.font_size, w.position);
+    }
+    std::fs::write("cloud.svg", svg::to_svg(&wc, &layout)?)?;
+    Ok(())
+}
+```
+
+Word shapes come from a `Mask`. White pixels are blocked, and the canvas takes
+the mask's size. This example loads the mask with the
+[`image`](https://crates.io/crates/image) crate (`cargo add image`):
+
+```rust
+use std::fs::{self, File};
+use wordcloud::{render, Mask, WordCloud};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let img = image::open("alice_mask.png")?.to_rgb8();
+    let mask = Mask::from_pixels(img.width() as usize, img.height() as usize, 3, img.as_raw())?;
+
+    let wc = WordCloud::builder().mask(mask).seed(1).build()?;
+    let layout = wc.generate(&fs::read_to_string("alice.txt")?)?;
+    render::write_png(&render::to_image(&wc, &layout)?, File::create("alice.png")?)?;
+    Ok(())
+}
+```
+
+Stopwords, collocations, the tokeniser regex and the minimum word length can be
+set through `Config::text`. See the [API docs](https://docs.rs/wordcloud) for every option.
 
 ## Font rendering and parity
 
